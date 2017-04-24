@@ -9,6 +9,7 @@
 # GExtenso class file
 #
 # author Fausto Gonçalves Cintra (goncin) <goncin@gmail.com>
+# assitente Leonardo Ostan (lostan) <lostan@gmail.com>
 # link http://goncin.wordpress.com
 # link http://twitter.com/g0nc1n
 # license http://creativecommons.org/licenses/LGPL/2.1/deed.pt
@@ -47,7 +48,9 @@
 # author Fausto Gonçalves Cintra (goncin) <goncin@gmail.com>
 # version 0.1 2010-06-10
  
-class GExtenso
+require 'date'
+
+module Extenso
   
   NUM_SING = 0
   NUM_PLURAL = 1
@@ -144,14 +147,101 @@ class GExtenso
     NUM_SING => 'milhão',
     NUM_PLURAL => 'milhões'
   }
+
+  UNIDADES_ORDINAL = {
+    GENERO_MASC => {
+      1 => 'primeiro',
+      2 => 'segundo',
+      3 => 'terceiro',
+      4 => 'quarto',
+      5 => 'quinto',
+      6 => 'sexto',
+      7 => 'sétimo',
+      8 => 'oitavo',
+      9 => 'nono'},
+    GENERO_FEM => {
+      1 => 'primeira',
+      2 => 'segunda',
+      3 => 'terceira',
+      4 => 'quarta',
+      5 => 'quinta',
+      6 => 'sexta',
+      7 => 'sétima',
+      8 => 'oitava',
+      9 => 'nona'}}
+
+  DEZENAS_ORDINAL = {
+    GENERO_MASC => {
+      10 => 'décimo',
+      20 => 'vigésimo',
+      30 => 'trigésimo',
+      40 => 'quadragésimo',
+      50 => 'quinquagésimo',
+      60 => 'sexagésimo',
+      70 => 'septuagésimo',
+      80 => 'octogésimo',
+      90 => 'nonagésimo'},
+    GENERO_FEM => {
+      10 => 'décima',
+      20 => 'vigésima',
+      30 => 'trigésima',
+      40 => 'quadragésima',
+      50 => 'quinquagésima',
+      60 => 'sexagésima',
+      70 => 'septuagésima',
+      80 => 'octogésima',
+      90 => 'nonagésima'}}
+   
+  CENTENAS_ORDINAL = {
+    GENERO_MASC => {
+      100 => 'centésimo',
+      200 => 'ducentésimo',
+      300 => 'trecentésimo',
+      400 => 'quadringentésimo',
+      500 => 'quingentésimo',
+      600 => 'seiscentésimo',
+      700 => 'septingentésimo',
+      800 => 'octingentésimo',
+      900 => 'noningentésimo'},
+    GENERO_FEM => {
+      100 => 'centésima',
+      200 => 'ducentésima',
+      300 => 'trecentésima',
+      400 => 'quadringentésima',
+      500 => 'quingentésima',
+      600 => 'seiscentésima',
+      700 => 'septingentésima',
+      800 => 'octingentésima',
+      900 => 'noningentésima'}}
+    
   
-  def self.is_int(s)
+    MILHAR_ORDINAL = {
+      GENERO_MASC => {
+        1000 => 'milésimo'},
+      GENERO_FEM =>{
+        1000 => 'milésima'}}
+  
+    MESES = {
+      1 => 'janeiro',
+      2 => 'fevereiro',
+      3 => 'março',
+      4 => 'abril',
+      5 => 'maio',
+      6 => 'junho',
+      7 => 'julho',
+      8 => 'agosto',
+      9 => 'setembro',
+      10 =>'outubro',
+      11 =>'novembro',
+      12 =>'dezembro'}
+
+  def Extenso.is_int(s)
     Integer(s) != nil rescue false
   end
   
   #######################################################################################################################################
   
-  def self.numero (valor, genero = GENERO_MASC)
+  def Extenso.numero (valor, genero = GENERO_MASC)
 
     # Gera a representação por extenso de um número inteiro, maior que zero e menor ou igual a VALOR_MAXIMO.
     #
@@ -162,21 +252,33 @@ class GExtenso
     # do extenso a ser gerado. Isso possibilita distinguir, por exemplo, entre 'duzentos e dois homens' e 'duzentas e duas mulheres'.
     #
     # VALOR DE RETORNO:
-    # (String) O número por extenso
+    # (String) O número por extenso incluindo ponto flutuante caso exista
     
     # ----- VALIDAÇÃO DOS PARÂMETROS DE ENTRADA ---- 
-    
-    if !is_int(valor)
-      raise "[Exceção em GExtenso.numero] Parâmetro 'valor' não é numérico (recebido: '#{valor}')"
-    elsif valor <= 0
+    if valor < 0
       raise "[Exceção em GExtenso.numero] Parâmetro 'valor' igual a ou menor que zero (recebido: '#{valor}')"
     elsif valor > VALOR_MAXIMO
       raise '[Exceção em GExtenso::numero] Parâmetro ''valor'' deve ser um inteiro entre 1 e ' + VALOR_MAXIMO.to_s + " (recebido: '#{valor}')"
     elsif genero != GENERO_MASC && genero != GENERO_FEM
       raise "Exceção em GExtenso: valor incorreto para o parâmetro 'genero' (recebido: '#{genero}')"
+    end
+    
+    if (valor - Integer(valor)) == 0
+      return Extenso.numero_inteiro(Integer(valor))
+    else
+      flutuante = valor - Integer(valor)
+      flutuante = flutuante.round(3)
+      zeros = (1..4).detect{|x| 1.0*flutuante*(10**x) >= 1} - 1
+      zeros_str = ""
+      (1..zeros).each {|x| zeros_str << "zero "}
+      casas = (1..4).detect{|x| 1.0*flutuante*(10**x)%10 == 0} - 1
+      return Extenso.numero_inteiro(Integer(valor)) + " ponto " + zeros_str + Extenso.numero_inteiro((1.0*(10**casas)*flutuante).to_i)
+    end
+  end
 
-  # ------------------------------------------------
-
+  def Extenso.numero_inteiro(valor, genero = GENERO_MASC)    
+    if valor == 0
+      return "zero"
     elsif valor >= 1 && valor <= 9
       UNIDADES[genero][valor]
     
@@ -193,7 +295,7 @@ class GExtenso
       # O conectivo 'e' é utilizado entre dezenas e unidades.
       resto = valor - dezena
       if resto > 0
-        ret += ' e ' + self.numero(resto, genero)
+        ret += ' e ' + Extenso.numero(resto, genero)
       end
       ret
 
@@ -207,7 +309,7 @@ class GExtenso
       # O conectivo 'e' é utilizado entre centenas e dezenas.
       resto = valor - centena 
       if resto > 0
-        ret += ' e ' + self.numero(resto, genero)
+        ret += ' e ' + Extenso.numero(resto, genero)
       end
       ret
 
@@ -216,15 +318,15 @@ class GExtenso
       # assim determinando a quantidade de milhares. O resultado é enviado a uma chamada recursiva
       # da função. A palavra 'mil' não se flexiona.
       milhar = (valor / 1000).floor
-      ret = self.numero(milhar, GENERO_MASC) + ' ' + MILHAR # 'Mil' é do gênero masculino
+      ret = Extenso.numero(milhar, GENERO_MASC) + ' ' + MILHAR # 'Mil' é do gênero masculino
       resto = valor % 1000
       # Chamada recursiva à função para processar resto se este for maior que zero.
       # O conectivo 'e' é utilizado entre milhares e números entre 1 e 99, bem como antes de centenas exatas.
       if resto > 0 && ((resto >= 1 && resto <= 99) || resto % 100 == 0)
-        ret += ' e ' + self.numero(resto, genero)
+        ret += ' e ' + Extenso.numero(resto, genero)
       # Nos demais casos, após o milhar é utilizada a vírgula.
       elsif (resto > 0)
-        ret += ', ' + self.numero(resto, genero)
+        ret += ', ' + Extenso.numero(resto, genero)
       end
       ret
 
@@ -233,7 +335,7 @@ class GExtenso
       # assim determinando a quantidade de milhões. O resultado é enviado a uma chamada recursiva
       # da função. A palavra 'milhão' flexiona-se no plural.
       milhoes = (valor / 1000000).floor
-      ret = self.numero(milhoes, GENERO_MASC) + ' ' # Milhão e milhões são do gênero masculino
+      ret = Extenso.numero(milhoes, GENERO_MASC) + ' ' # Milhão e milhões são do gênero masculino
       
       # Se a o número de milhões for maior que 1, deve-se utilizar a forma flexionada no plural
       ret += milhoes == 1 ? MILHOES[NUM_SING] : MILHOES[NUM_PLURAL]
@@ -243,10 +345,10 @@ class GExtenso
       # Chamada recursiva à função para processar resto se este for maior que zero.
       # O conectivo 'e' é utilizado entre milhões e números entre 1 e 99, bem como antes de centenas exatas.
       if resto && ((resto >= 1 && resto <= 99) || resto % 100 == 0)
-        ret += ' e ' + ret.numero(resto, genero)
+        ret += ' e ' + Extenso.numero(resto, genero)
       # Nos demais casos, após o milhão é utilizada a vírgula.
       elsif resto > 0
-        ret += ', ' + self.numero(resto, genero)
+        ret += ', ' + Extenso.numero(resto, genero)
       end
       ret
 
@@ -256,7 +358,7 @@ class GExtenso
   
   #######################################################################################################################################
   
-  def self.moeda(
+  def Extenso.moeda(
     valor,
     casas_decimais = 2,
     info_unidade = ['real', 'reais', GENERO_MASC],
@@ -286,14 +388,13 @@ class GExtenso
    # (String) O valor monetário por extenso
    
     # ----- VALIDAÇÃO DOS PARÂMETROS DE ENTRADA ----
-
-    if ! self.is_int(valor)
+    if ! Extenso.is_int(valor)
       raise "[Exceção em GExtenso.moeda] Parâmetro 'valor' não é numérico (recebido: '#{valor}')"
 
-    elsif valor <= 0
+    elsif valor < 0
       raise "[Exceção em GExtenso.moeda] Parâmetro valor igual a ou menor que zero (recebido: '#{valor}')"
 
-    elsif ! self.is_int(casas_decimais) || casas_decimais < 0
+    elsif ! Extenso.is_int(casas_decimais) || casas_decimais < 0
       raise "[Exceção em GExtenso.moeda] Parâmetro 'casas_decimais' não é numérico ou é menor que zero (recebido: '#{casas_decimais}')"
 
     elsif info_unidade.class != Array || info_unidade.length < 3
@@ -309,7 +410,8 @@ class GExtenso
     
     elsif info_fracao[POS_GENERO] != GENERO_MASC && info_fracao[POS_GENERO] != GENERO_FEM
       raise "[Exceção em GExtenso.moeda] valor incorreto para o parâmetro 'info_fracao[POS_GENERO]' (recebido: '#{info_fracao[POS_GENERO]}')."
-    
+    elsif valor == 0
+      return "zero reais"
     end
 
     # -----------------------------------------------
@@ -327,7 +429,7 @@ class GExtenso
     # O extenso para a parte_inteira somente será gerado se esta for maior que zero. Para tanto, utilizamos
     # os préstimos do método GExtenso::numero().
     if parte_inteira > 0
-      ret = self.numero(parte_inteira, info_unidade[POS_GENERO]) + ' '
+      ret = Extenso.numero(parte_inteira, info_unidade[POS_GENERO]) + ' '
       ret += parte_inteira == 1 ? info_unidade[NUM_SING] : info_unidade[NUM_PLURAL]
     end
 
@@ -338,12 +440,94 @@ class GExtenso
       if parte_inteira > 0
         ret += ' e '
       end
-      ret += self.numero(fracao, info_fracao[POS_GENERO]) + ' '
+      ret += Extenso.numero(fracao, info_fracao[POS_GENERO]) + ' '
       ret += parte_inteira == 1 ? info_fracao[NUM_SING] : info_fracao[NUM_PLURAL]
     end
 
     ret
 
   end
+######################################################################################################################################################
+  def Extenso.data(data)
+    # Escreve uma data por extenso
+    # A variavel data é um objeto da classe Date
+    # Uso esta classe porque ela dá suporte à operações elementares com datas e mantém a consistência nos sistemas que estou programando
+    # VALOR DE RETORNO: 
+    # (String) A data escrita por extenso
+    # Exemplo: GExtenso.data(Date.parse "23/12/1983") ==> "vinte e três de dezembro de mil novecentos e oitenta e três"
+    %Q{#{Extenso.numero(data.day)} de #{MESES[data.month]} de #{Extenso.numero(data.year)}}
+  end
+
+######################################################################################################################################################
+  def Extenso.ordinal (valor, genero = GENERO_MASC)
+
+    # Gera a representação ordinal de um número inteiro de 1 à 1000
+
+    # PARÂMETROS:
+    # valor (Integer) O valor numérico cujo extenso se deseja gerar
+    #
+    # genero (Integer) [Opcional; valor padrão: GExtenso::GENERO_MASC] O gênero gramatical (GExtenso::GENERO_MASC ou GExtenso::GENERO_FEM)
+    # do extenso a ser gerado. Isso possibilita distinguir, por exemplo, entre 'duzentos e dois homens' e 'duzentas e duas mulheres'.
+    #
+    # VALOR DE RETORNO:
+    # (String) O número por extenso
+    
+    # ----- VALIDAÇÃO DOS PARÂMETROS DE ENTRADA ---- 
+    
+    if !is_int(valor)
+      raise "[Exceção em GExtenso.numero] Parâmetro 'valor' não é numérico (recebido: '#{valor}')"
+    elsif valor <= 0
+      raise "[Exceção em GExtenso.numero] Parâmetro 'valor' igual a ou menor que zero (recebido: '#{valor}')"
+    elsif valor > VALOR_MAXIMO
+      raise '[Exceção em GExtenso::numero] Parâmetro ''valor'' deve ser um inteiro entre 1 e ' + VALOR_MAXIMO.to_s + " (recebido: '#{valor}')"
+    elsif genero != GENERO_MASC && genero != GENERO_FEM
+      raise "Exceção em GExtenso: valor incorreto para o parâmetro 'genero' (recebido: '#{genero}')"
+  # ------------------------------------------------
+    elsif valor >= 1 && valor <= 9
+      return UNIDADES_ORDINAL[genero][valor]
+    elsif valor >= 10 && valor <= 99
+      dezena = valor - (valor % 10)
+      resto = valor - dezena
+      ret = DEZENAS_ORDINAL[genero][dezena]+" "
+      if resto > 0 then ret+= Extenso.ordinal(resto,genero); end
+      return ret
+    elsif valor >= 100 && valor <= 999
+      centena = valor - (valor % 100)
+      resto = valor - centena 
+      ret = CENTENAS_ORDINAL[genero][centena]+" "
+      if resto > 0 then ret += Extenso.ordinal(resto, genero); end
+      return ret
+    elsif valor == 1000
+      return MILHAR_ORDINAL[genero][valor]+" "
+    end
+  end
+
+  def Extenso.moeda_real(numero)
+    unit = "R$"
+    separator = ","
+    delimiter = "."
+    mystring = sprintf("%s %.2f",unit, numero)
+    mystring = mystring.gsub(".",separator)
+    pos = mystring.match(separator).begin(0) - 3
+    while !(/[0-9]/.match(mystring[pos-1])== nil) do
+      mystring.insert(pos,delimiter)
+      pos-=3
+    end 
+    return mystring
+  end
+
+  def Extenso.to_cash(numero)
+    unit = "R$"
+    separator = ","
+    delimiter = "."
+    mystring = sprintf("%s %.2f",unit, numero)
+    mystring = mystring.gsub(".",separator)
+    pos = mystring.match(separator).begin(0) - 3
+    while !(/[0-9]/.match(mystring[pos-1])== nil) do
+      mystring.insert(pos,delimiter)
+      pos-=3
+    end 
+    return mystring << " (" << Extenso.moeda((numero*100).to_i) << ")"
+  end 
   
 end 
