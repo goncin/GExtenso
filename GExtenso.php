@@ -167,7 +167,7 @@
  *
  * @since 0.1 2010-03-02
  */
-  public static function numero($valor, $genero = self::GENERO_MASC) {
+  public static function numero($valor, $genero = self::GENERO_MASC, $escrever_um_mil = true) {
 
     /* ----- VALIDAÇÃO DOS PARÂMETROS DE ENTRADA ---- */
 
@@ -224,7 +224,11 @@
        * da função. A palavra 'mil' não se flexiona.
        */
       $milhar = floor($valor / 1000);
-      $ret = self::numero($milhar, self::GENERO_MASC) . ' ' . self::$MILHAR; // 'Mil' é do gênero masculino
+	  /* Verificando se é preciso escrever "um" antes de "mil" */
+      $ret = "";
+      if ($milhar != 1 || $escrever_um_mil)
+        $ret = self::numero($milhar, self::GENERO_MASC) . ' ';
+      $ret .= self::$MILHAR; // 'Mil' é do gênero masculino
       $resto = $valor % 1000;
       /* Chamada recursiva à função para processar $resto se este for maior que zero.
        * O conectivo 'e' é utilizado entre milhares e números entre 1 e 99, bem como antes de centenas exatas.
